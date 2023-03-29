@@ -26,7 +26,7 @@ async function DataCollection() {
     return {
       id: post?.id,
       title: post?.title,
-      slug: post?.slug,
+      page_slug: post?.slug,
       links: await handleSlices(post?.slices)
     }
   }))
@@ -62,7 +62,7 @@ function handleFindContentLinks(content) {
       const linkStatusCheckerData = await linkStatusChecker(formattedLink)
 
       return linksArray.push({
-        link: `
+        html_link: `
           <li class="link">
             <a href="${formattedLink}" target="_blank">${
           formattedLink.includes("javascript:")
@@ -71,15 +71,14 @@ function handleFindContentLinks(content) {
             }</a><span>${linkStatusCheckerData.status}</span>
           </li>
         `,
-        status: linkStatusCheckerData.status
+        status: linkStatusCheckerData.status,
+        url: formattedLink
       });
     }
   });
 
   
   return links && Promise.allSettled(handleListGen).then(() => {
-    console.log(linksArray)
-
     return linksArray
   });
 };

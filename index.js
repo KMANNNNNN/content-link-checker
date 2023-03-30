@@ -13,7 +13,7 @@ app.listen(3001, () => {
 
 async function DataCollection() {
   const posts = await fetch(
-    "https://content.nomensa.com/blog?_start=0&_limit=50",
+    "https://content.nomensa.com/blog?_start=0&_limit=2",
     {
       method: "GET",
       withCredentials: true,
@@ -27,7 +27,7 @@ async function DataCollection() {
       id: post?.id,
       title: post?.title,
       page_slug: post?.slug,
-      links: await handleSlices(post?.slices)
+      ...await handleSlices(post?.slices)
     }
   }))
 }
@@ -79,7 +79,9 @@ function handleFindContentLinks(content) {
 
   
   return links && Promise.allSettled(handleListGen).then(() => {
-    return linksArray
+    return {
+      links: linksArray
+    }
   });
 };
 

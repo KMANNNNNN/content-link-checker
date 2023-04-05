@@ -20,32 +20,41 @@ async function DataCollection() {
       crossorigin: true,
       mode: "cors"
     }
-  ).then((res) => res.json());
+  ).then((res) => res.json())
 
-  return await Promise.all(posts.map( async(post) => {
+  const results = Promise.all(posts.map(async post => {
+    const arrOfLinks = await handleSlices(post?.slices) 
     return {
       id: post?.id,
       title: post?.title,
       page_slug: post?.slug,
-      ...await handleSlices(post?.slices)
+      links: arrOfLinks.reduce((acc, links) => {
+        if (!links) return acc
+        return [
+          ...acc,
+          ...links,
+        ]
+      }, [])
     }
   }))
+
+  return results
 }
 
 async function handleSlices(slices) {
-  return await Promise.all(slices.map(async (slice) => {
+  return Promise.all(slices.map(async (slice) => {
     if (slice.__component === "slices.textblock") {
       return await handleFindContentLinks(slice.content)
     }
   }))
 }
 
-function handleFindContentLinks(content) {
+async function handleFindContentLinks(content) {
   const linkRegex = /href=['"](?<url>.*?)['"]|\[(.+)\]\(([^ ]+)( "(.+)")?\)/gm;
   const links = content.match(linkRegex);
   let linksArray = [];
 
-  const handleListGen = links && links.map(async (link) => {
+  for (const link of links) {
     const formattedLink = link
     .replace('href="', "")
     .replace(/^\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)$/gm, "$2")
@@ -61,7 +70,7 @@ function handleFindContentLinks(content) {
 
       const linkStatusCheckerData = await linkStatusChecker(formattedLink)
 
-      return linksArray.push({
+      linksArray.push({
         html_link: `
           <li class="link">
             <a href="${formattedLink}" target="_blank">${
@@ -75,14 +84,8 @@ function handleFindContentLinks(content) {
         url: formattedLink
       });
     }
-  });
-
-  
-  return links && Promise.allSettled(handleListGen).then(() => {
-    return {
-      links: linksArray
-    }
-  });
+  }
+  return linksArray
 };
 
 async function linkStatusChecker(url) {
